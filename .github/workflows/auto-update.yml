@@ -10,29 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout parent repository
-        uses: actions/checkout@v5
+      - name: Checkout parent repository with submodules updated
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          submodules: true
-          fetch-depth: 0
-
-      - name: Pull latest submodule commits
-        run: |
-          git submodule foreach '
-            git fetch origin
-            git checkout $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)
-            git reset --hard origin/$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)
-          '
+          submodules: recursive
+          submodule-update: remote
 
       - name: Commit and push if changed
         run: |
-          git config --global user.name  "github-actions[bot]"
+          git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           git add .
 
-          if git diff --cached --quiet; then
+          if [ -z "$(git status --porcelain)" ]; then
             echo "Submodules already up to date — nothing to commit."
             exit 0
           fi
